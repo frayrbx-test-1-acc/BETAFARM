@@ -1,31 +1,30 @@
--- LocalScript
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
 
--- Ждём LocalPlayer
 local player = Players.LocalPlayer
 repeat task.wait() until player
 
--- Ждём PlayerGui
+
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Переменные
+
 local character = player.Character or player.CharacterAdded:Wait()
 local rootPart = character:WaitForChild("HumanoidRootPart")
 local antiFlingEnabled = false
 local visitedPositions, isActive, flySpeed, collected = {}, false, 15, 0
 local startTime, antiAfkEnabled, autoResetEnabled = 0, false, false
 
--- Обновление Character при респавне
+
 player.CharacterAdded:Connect(function(char)
 	character = char
 	rootPart = char:WaitForChild("HumanoidRootPart")
 	visitedPositions = {}
 end)
 
--- GUI
+
 local gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "AutoFarmGui"
 gui.ResetOnSpawn = false
@@ -40,7 +39,7 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
 local stroke = Instance.new("UIStroke", frame)
 stroke.Color, stroke.Thickness = Color3.fromRGB(255,140,0), 2
 
--- Вспомогательные функции
+
 local function makeLabel(y, text)
 	local lbl = Instance.new("TextLabel", frame)
 	lbl.Size = UDim2.new(0,200,0,18)
@@ -73,7 +72,7 @@ local function makeButton(y, text)
 	return btn
 end
 
--- Заголовок
+
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,-12,0,28)
 title.Position = UDim2.new(0,6,0,5)
@@ -90,7 +89,6 @@ sep.Position = UDim2.new(0,6,0,35)
 sep.BackgroundColor3 = Color3.fromRGB(120,60,180)
 sep.BorderSizePixel = 0
 
--- Кнопки
 local toggleBtn = makeButton(50, "Auto: OFF")
 local antiAfkBtn = makeButton(85, "AFK: OFF")
 local autoResetBtn = makeButton(120, "AutoReset: OFF")
@@ -98,12 +96,11 @@ local speedBtn = makeButton(155, "Speed: 15")
 local antiFlingBtn = makeButton(190, "Anti Fling: OFF")
 local disableEffectsBtn = makeButton(225, "Disable Effects")
 
--- Лейблы
 local counterLabel = makeLabel(260, "Candies: 0")
 local timerLabel = makeLabel(275, "Time: 0s")
 local rateLabel = makeLabel(290, "Rate: 0/h")
 
--- Функция движения
+
 local function flyTo(pos, speed)
 	if not rootPart or not rootPart.Parent then return end
 	local dist = (pos - rootPart.Position).Magnitude
@@ -112,7 +109,7 @@ local function flyTo(pos, speed)
 	tween.Completed:Wait()
 end
 
--- Disable Effects
+
 disableEffectsBtn.MouseButton1Click:Connect(function()
 	local ToDisable = {Textures=true, VisualEffects=true, Parts=true, Particles=true, Sky=true}
 	local Stuff = {}
@@ -141,7 +138,6 @@ disableEffectsBtn.MouseButton1Click:Connect(function()
 	print("Effects Disabler: Disabled "..#Stuff.." assets/effects")
 end)
 
--- Anti-Fling
 RunService.Stepped:Connect(function()
 	if antiFlingEnabled then
 		for _, coPlayer in pairs(Players:GetPlayers()) do
@@ -153,7 +149,7 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- AutoFarm
+
 toggleBtn.MouseButton1Click:Connect(function()
 	isActive = not isActive
 	toggleBtn.Text = isActive and "Auto: ON" or "Auto: OFF"
@@ -194,7 +190,7 @@ toggleBtn.MouseButton1Click:Connect(function()
 					end
 				end
 			end
-			-- AutoReset
+	
 			if autoResetEnabled and character then
 				local mainGui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("MainGUI")
 				local gameGui = mainGui and mainGui:FindFirstChild("Game")
@@ -216,7 +212,7 @@ toggleBtn.MouseButton1Click:Connect(function()
 	end)
 end)
 
--- Остальные кнопки
+
 antiAfkBtn.MouseButton1Click:Connect(function()
 	antiAfkEnabled = not antiAfkEnabled
 	antiAfkBtn.Text = antiAfkEnabled and "AFK: ON" or "AFK: OFF"
@@ -238,7 +234,7 @@ antiFlingBtn.MouseButton1Click:Connect(function()
 	antiFlingBtn.Text = antiFlingEnabled and "Anti Fling: ON" or "Anti Fling: OFF"
 end)
 
--- Anti-AFK
+
 player.Idled:Connect(function()
 	if antiAfkEnabled then
 		VirtualUser:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
