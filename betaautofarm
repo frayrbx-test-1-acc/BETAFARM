@@ -12,7 +12,6 @@ local visitedPositions, isActive, flySpeed, collected = {}, false, 15, 0
 local startTime, antiAfkEnabled, autoResetEnabled = 0, false, false
 local texturesHidden = false
 
--- Подключаемся к смене персонажа
 player.CharacterAdded:Connect(function(char)
 	character = char
 	rootPart = char:WaitForChild("HumanoidRootPart")
@@ -107,12 +106,27 @@ local function flyTo(pos, speed)
 	tween.Completed:Wait()
 end
 
--- Hide textures
+-- Полная очистка текстур и материалов
 texturesBtn.MouseButton1Click:Connect(function()
 	texturesHidden = not texturesHidden
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Decal") or obj:IsA("Texture") then
 			obj.Transparency = texturesHidden and 1 or 0
+		elseif obj:IsA("BasePart") then
+			obj.Transparency = texturesHidden and 1 or 0
+			-- Очищаем SpecialMesh
+			for _, mesh in pairs(obj:GetChildren()) do
+				if mesh:IsA("SpecialMesh") then
+					if texturesHidden then
+						mesh.TextureId = ""
+					end
+				end
+			end
+			-- Удаляем SurfaceAppearance, если есть
+			local sa = obj:FindFirstChildOfClass("SurfaceAppearance")
+			if sa and texturesHidden then
+				sa:Destroy()
+			end
 		end
 	end
 	texturesBtn.Text = texturesHidden and "Hide Textures: ON ✅" or "Hide Textures: OFF"
@@ -130,7 +144,7 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- Основная логика автосбора
+-- Автосбор
 toggleBtn.MouseButton1Click:Connect(function()
 	isActive = not isActive
 	toggleBtn.Text = isActive and "Auto: ON" or "Auto: OFF"
@@ -217,6 +231,7 @@ antiFlingBtn.MouseButton1Click:Connect(function()
 	antiFlingBtn.Text = antiFlingEnabled and "Anti Fling: ON" or "Anti Fling: OFF"
 end)
 
+-- Anti-AFK
 player.Idled:Connect(function()
 	if antiAfkEnabled then
 		task.spawn(function()
