@@ -9,21 +9,6 @@ local rootPart = character:WaitForChild("HumanoidRootPart")
 
 local antiFlingEnabled = false
 
-local function disableCollisions()
-	for _, part in pairs(character:GetChildren()) do
-		if part:IsA("BasePart") then
-			part.CanCollide = false
-		end
-	end
-end
-
-disableCollisions()
-player.CharacterAdded:Connect(function(char)
-	character = char
-	rootPart = char:WaitForChild("HumanoidRootPart")
-	disableCollisions()
-end)
-
 RunService.Stepped:Connect(function()
 	if antiFlingEnabled then
 		for _, CoPlayer in pairs(Players:GetChildren()) do
@@ -116,14 +101,10 @@ local rateLabel = makeLabel(245, "Rate: 0/h")
 
 local function flyTo(pos, speed)
 	if not rootPart or not rootPart.Parent then return end
-	local dt = 0.03
-	while (pos - rootPart.Position).Magnitude > 1 do
-		if not rootPart or not rootPart.Parent then break end
-		local direction = (pos - rootPart.Position)
-		local move = direction.Unit * math.min(direction.Magnitude, speed * dt)
-		rootPart.CFrame = rootPart.CFrame + move
-		RunService.Heartbeat:Wait()
-	end
+	local dist = (pos - rootPart.Position).Magnitude
+	local tween = TweenService:Create(rootPart, TweenInfo.new(dist/speed, Enum.EasingStyle.Linear), {CFrame=CFrame.new(pos)})
+	tween:Play()
+	tween.Completed:Wait()
 end
 
 toggleBtn.MouseButton1Click:Connect(function()
@@ -178,7 +159,7 @@ toggleBtn.MouseButton1Click:Connect(function()
 					end
 				end
 			end
-			task.wait(0.03)
+			task.wait(0.1)
 		end
 	end)
 end)
