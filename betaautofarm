@@ -28,6 +28,7 @@ end)
 
 local visitedPositions, isActive, flySpeed, collected = {}, false, 15, 0
 local startTime, antiAfkEnabled, autoResetEnabled = 0, false, false
+local texturesHidden = false -- для прозрачных текстур
 
 player.CharacterAdded:Connect(function(char)
 	character = char
@@ -35,12 +36,13 @@ player.CharacterAdded:Connect(function(char)
 	visitedPositions = {}
 end)
 
+-- GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "AutoFarmGui"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 220, 0, 330)
+frame.Size = UDim2.new(0, 220, 0, 340)
 frame.Position = UDim2.new(0.5, -110, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
 frame.BorderSizePixel = 0
@@ -55,7 +57,7 @@ local function makeLabel(y, text)
 	lbl.Position = UDim2.new(0.5,-100,0,y)
 	lbl.Text, lbl.TextColor3 = text, Color3.fromRGB(255,140,0)
 	lbl.BackgroundTransparency = 1
-	lbl.Font, lbl.TextSize, lbl.TextXAlignment = Enum.TextXAlignment.Left, Enum.Font.Gotham
+	lbl.Font, lbl.TextSize, lbl.TextXAlignment = Enum.Font.Gotham, 12
 	return lbl
 end
 
@@ -77,6 +79,7 @@ local function makeButton(y, text)
 	return btn
 end
 
+-- Заголовок
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,-12,0,28)
 title.Position = UDim2.new(0,6,0,5)
@@ -95,24 +98,14 @@ local antiAfkBtn = makeButton(85, "AFK: OFF")
 local autoResetBtn = makeButton(120, "AutoReset: OFF")
 local speedBtn = makeButton(155, "Speed: 15")
 local antiFlingBtn = makeButton(190, "Anti Fling: OFF")
-local removeTexturesBtn = makeButton(225, "Remove Textures")
-
-removeTexturesBtn.MouseButton1Click:Connect(function()
-	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("Decal") or obj:IsA("Texture") then
-			obj:Destroy()
-		end
-	end
-	removeTexturesBtn.Text = "Textures Removed ✅"
-	removeTexturesBtn.BackgroundColor3 = Color3.fromRGB(60,150,60)
-end)
+local texturesBtn = makeButton(225, "Hide Textures: OFF")
 
 -- Лейблы
 local counterLabel = makeLabel(260, "Candies: 0")
 local timerLabel = makeLabel(275, "Time: 0s")
 local rateLabel = makeLabel(290, "Rate: 0/h")
 
--- Функция для перемещения
+-- Функция перемещения
 local function flyTo(pos, speed)
 	if not rootPart or not rootPart.Parent then return end
 	local dist = (pos - rootPart.Position).Magnitude
@@ -121,7 +114,18 @@ local function flyTo(pos, speed)
 	tween.Completed:Wait()
 end
 
--- Логика кнопок
+-- Кнопка скрытия текстур
+texturesBtn.MouseButton1Click:Connect(function()
+	texturesHidden = not texturesHidden
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Decal") or obj:IsA("Texture") then
+			obj.Transparency = texturesHidden and 1 or 0
+		end
+	end
+	texturesBtn.Text = texturesHidden and "Hide Textures: ON ✅" or "Hide Textures: OFF"
+end)
+
+-- Логика остальных кнопок
 toggleBtn.MouseButton1Click:Connect(function()
 	isActive = not isActive
 	toggleBtn.Text = isActive and "Auto: ON" or "Auto: OFF"
