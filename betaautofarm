@@ -8,28 +8,11 @@ local character = player.Character or player.CharacterAdded:Wait()
 local rootPart = character:WaitForChild("HumanoidRootPart")
 
 local antiFlingEnabled = false
-
-RunService.Stepped:Connect(function()
-	if antiFlingEnabled then
-		for _, CoPlayer in pairs(Players:GetChildren()) do
-			if CoPlayer ~= player and CoPlayer.Character then
-				local hrp = CoPlayer.Character:FindFirstChild("HumanoidRootPart")
-				if hrp then hrp.CanCollide = false end
-			end
-		end
-		for _, acc in pairs(workspace:GetChildren()) do
-			if acc:IsA("Accessory") then
-				local part = acc:FindFirstChildWhichIsA("Part")
-				if part then part:Destroy() end
-			end
-		end
-	end
-end)
-
 local visitedPositions, isActive, flySpeed, collected = {}, false, 15, 0
 local startTime, antiAfkEnabled, autoResetEnabled = 0, false, false
-local texturesHidden = false -- для прозрачных текстур
+local texturesHidden = false
 
+-- Подключаемся к смене персонажа
 player.CharacterAdded:Connect(function(char)
 	character = char
 	rootPart = char:WaitForChild("HumanoidRootPart")
@@ -37,12 +20,13 @@ player.CharacterAdded:Connect(function(char)
 end)
 
 -- GUI
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local gui = Instance.new("ScreenGui")
 gui.Name = "AutoFarmGui"
 gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 220, 0, 340)
+frame.Size = UDim2.new(0, 220, 0, 360)
 frame.Position = UDim2.new(0.5, -110, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
 frame.BorderSizePixel = 0
@@ -51,13 +35,17 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
 local stroke = Instance.new("UIStroke", frame)
 stroke.Color, stroke.Thickness = Color3.fromRGB(255,140,0), 2
 
+-- Вспомогательные функции
 local function makeLabel(y, text)
 	local lbl = Instance.new("TextLabel", frame)
 	lbl.Size = UDim2.new(0,200,0,18)
 	lbl.Position = UDim2.new(0.5,-100,0,y)
-	lbl.Text, lbl.TextColor3 = text, Color3.fromRGB(255,140,0)
+	lbl.Text = text
+	lbl.TextColor3 = Color3.fromRGB(255,140,0)
 	lbl.BackgroundTransparency = 1
-	lbl.Font, lbl.TextSize, lbl.TextXAlignment = Enum.Font.Gotham, 12
+	lbl.Font = Enum.Font.Gotham
+	lbl.TextSize = 12
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
 	return lbl
 end
 
@@ -68,7 +56,8 @@ local function makeButton(y, text)
 	btn.Text = text
 	btn.BackgroundColor3 = Color3.fromRGB(50,30,70)
 	btn.TextColor3 = Color3.fromRGB(255,165,0)
-	btn.Font, btn.TextSize = Enum.Font.GothamBold, 12
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 12
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
 	btn.MouseEnter:Connect(function()
 		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3=Color3.fromRGB(120,60,180)}):Play()
@@ -84,13 +73,17 @@ local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,-12,0,28)
 title.Position = UDim2.new(0,6,0,5)
 title.Text = "🎃 Fray.rbx || Autofarm"
-title.TextColor3, title.BackgroundTransparency = Color3.fromRGB(255,165,0), 1
-title.Font, title.TextSize, title.TextXAlignment = Enum.Font.GothamBold, 16
+title.TextColor3 = Color3.fromRGB(255,165,0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextXAlignment = Enum.TextXAlignment.Left
 
 local sep = Instance.new("Frame", frame)
 sep.Size = UDim2.new(1,-12,0,1)
 sep.Position = UDim2.new(0,6,0,35)
-sep.BackgroundColor3, sep.BorderSizePixel = Color3.fromRGB(120,60,180), 0
+sep.BackgroundColor3 = Color3.fromRGB(120,60,180)
+sep.BorderSizePixel = 0
 
 -- Кнопки
 local toggleBtn = makeButton(50, "Auto: OFF")
@@ -105,7 +98,7 @@ local counterLabel = makeLabel(260, "Candies: 0")
 local timerLabel = makeLabel(275, "Time: 0s")
 local rateLabel = makeLabel(290, "Rate: 0/h")
 
--- Функция перемещения
+-- Перемещение
 local function flyTo(pos, speed)
 	if not rootPart or not rootPart.Parent then return end
 	local dist = (pos - rootPart.Position).Magnitude
@@ -114,7 +107,7 @@ local function flyTo(pos, speed)
 	tween.Completed:Wait()
 end
 
--- Кнопка скрытия текстур
+-- Hide textures
 texturesBtn.MouseButton1Click:Connect(function()
 	texturesHidden = not texturesHidden
 	for _, obj in pairs(workspace:GetDescendants()) do
@@ -125,22 +118,37 @@ texturesBtn.MouseButton1Click:Connect(function()
 	texturesBtn.Text = texturesHidden and "Hide Textures: ON ✅" or "Hide Textures: OFF"
 end)
 
--- Логика остальных кнопок
+-- Anti-Fling
+RunService.Stepped:Connect(function()
+	if antiFlingEnabled then
+		for _, coPlayer in pairs(Players:GetPlayers()) do
+			if coPlayer ~= player and coPlayer.Character then
+				local hrp = coPlayer.Character:FindFirstChild("HumanoidRootPart")
+				if hrp then hrp.CanCollide = false end
+			end
+		end
+	end
+end)
+
+-- Основная логика автосбора
 toggleBtn.MouseButton1Click:Connect(function()
 	isActive = not isActive
 	toggleBtn.Text = isActive and "Auto: ON" or "Auto: OFF"
 	toggleBtn.BackgroundColor3 = isActive and Color3.fromRGB(60,150,60) or Color3.fromRGB(50,30,70)
 	if not isActive then return end
+
 	collected, startTime, visitedPositions = 0, tick(), {}
+
 	task.spawn(function()
 		while isActive do
-			local elapsed = tick()-startTime
+			local elapsed = tick() - startTime
 			timerLabel.Text = "Time: "..math.floor(elapsed).."s"
-			local rate = elapsed>0 and math.floor((collected/elapsed)*3600) or 0
+			local rate = elapsed > 0 and math.floor((collected/elapsed)*3600) or 0
 			rateLabel.Text = "Rate: "..rate.."/h"
 			task.wait(0.1)
 		end
 	end)
+
 	task.spawn(function()
 		while isActive do
 			character = player.Character or player.CharacterAdded:Wait()
@@ -149,19 +157,22 @@ toggleBtn.MouseButton1Click:Connect(function()
 				local closest, dist = nil, math.huge
 				for _, obj in ipairs(workspace:GetDescendants()) do
 					if obj:IsA("BasePart") and obj.Name=="Coin_Server" and not visitedPositions[obj] then
-						local d = (obj.Position-rootPart.Position).Magnitude
-						if d<dist and d<250 then closest, dist = obj, d end
+						local d = (obj.Position - rootPart.Position).Magnitude
+						if d < dist and d < 250 then
+							closest, dist = obj, d
+						end
 					end
 				end
 				if closest then
 					flyTo(closest.Position, flySpeed)
 					if closest:IsDescendantOf(workspace) then
-						visitedPositions[closest]=true
-						collected+=1
-						counterLabel.Text="Candies: "..collected
+						visitedPositions[closest] = true
+						collected += 1
+						counterLabel.Text = "Candies: "..collected
 					end
 				end
 			end
+
 			if autoResetEnabled and character then
 				local mainGui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("MainGUI")
 				local gameGui = mainGui and mainGui:FindFirstChild("Game")
@@ -178,11 +189,13 @@ toggleBtn.MouseButton1Click:Connect(function()
 					end
 				end
 			end
+
 			task.wait(0.1)
 		end
 	end)
 end)
 
+-- Остальные кнопки
 antiAfkBtn.MouseButton1Click:Connect(function()
 	antiAfkEnabled = not antiAfkEnabled
 	antiAfkBtn.Text = antiAfkEnabled and "AFK: ON" or "AFK: OFF"
