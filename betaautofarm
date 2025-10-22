@@ -114,19 +114,16 @@ local counterLabel = makeLabel(215, "Candies: 0")
 local timerLabel = makeLabel(230, "Time: 0s")
 local rateLabel = makeLabel(245, "Rate: 0/h")
 
-local function flyToBody(targetPos)
+local function flyToSmooth(targetPos, speed)
 	if not rootPart or not rootPart.Parent then return end
-	local bp = Instance.new("BodyPosition")
-	bp.MaxForce = Vector3.new(1e5,1e5,1e5)
-	bp.P = 10000
-	bp.D = 50
-	bp.Position = targetPos
-	bp.Parent = rootPart
-	while (rootPart.Position - targetPos).Magnitude > 1 do
-		task.wait(0.03)
-		bp.Position = targetPos
+	local dt = 0.03
+	while (targetPos - rootPart.Position).Magnitude > 1 do
+		if not rootPart or not rootPart.Parent then break end
+		local direction = (targetPos - rootPart.Position)
+		local move = direction.Unit * math.min(direction.Magnitude, speed * dt)
+		rootPart.CFrame = rootPart.CFrame + move
+		RunService.Heartbeat:Wait()
 	end
-	bp:Destroy()
 end
 
 toggleBtn.MouseButton1Click:Connect(function()
@@ -157,7 +154,7 @@ toggleBtn.MouseButton1Click:Connect(function()
 					end
 				end
 				if closest then
-					flyToBody(closest.Position)
+					flyToSmooth(closest.Position, flySpeed)
 					if closest:IsDescendantOf(workspace) then
 						visitedPositions[closest]=true
 						collected+=1
@@ -181,7 +178,7 @@ toggleBtn.MouseButton1Click:Connect(function()
 					end
 				end
 			end
-			task.wait(0.05)
+			task.wait(0.03)
 		end
 	end)
 end)
