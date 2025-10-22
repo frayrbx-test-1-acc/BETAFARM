@@ -3,11 +3,17 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
-local player = Players.LocalPlayer
 
+-- Ждём LocalPlayer
+local player = Players.LocalPlayer
+repeat task.wait() until player
+
+-- Ждём PlayerGui
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Переменные
 local character = player.Character or player.CharacterAdded:Wait()
 local rootPart = character:WaitForChild("HumanoidRootPart")
-
 local antiFlingEnabled = false
 local visitedPositions, isActive, flySpeed, collected = {}, false, 15, 0
 local startTime, antiAfkEnabled, autoResetEnabled = 0, false, false
@@ -20,7 +26,7 @@ player.CharacterAdded:Connect(function(char)
 end)
 
 -- GUI
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "AutoFarmGui"
 gui.ResetOnSpawn = false
 
@@ -109,7 +115,6 @@ end
 -- Disable Effects
 disableEffectsBtn.MouseButton1Click:Connect(function()
 	local ToDisable = {Textures=true, VisualEffects=true, Parts=true, Particles=true, Sky=true}
-	local ToEnable = {FullBright=false}
 	local Stuff = {}
 	for _, v in pairs(game:GetDescendants()) do
 		if ToDisable.Parts and (v:IsA("Part") or v:IsA("Union") or v:IsA("BasePart")) then
@@ -236,10 +241,8 @@ end)
 -- Anti-AFK
 player.Idled:Connect(function()
 	if antiAfkEnabled then
-		task.spawn(function()
-			VirtualUser:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-			task.wait(1)
-			VirtualUser:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-		end)
+		VirtualUser:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+		task.wait(1)
+		VirtualUser:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
 	end
 end)
