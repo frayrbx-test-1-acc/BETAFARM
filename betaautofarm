@@ -40,8 +40,8 @@ gui.Name = "AutoFarmGui"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 275)
-frame.Position = UDim2.new(0.5, -96, 0.3, 0)
+frame.Size = UDim2.new(0, 220, 0, 330)
+frame.Position = UDim2.new(0.5, -110, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
 frame.BorderSizePixel = 0
 frame.Active, frame.Draggable = true, true
@@ -51,18 +51,18 @@ stroke.Color, stroke.Thickness = Color3.fromRGB(255,140,0), 2
 
 local function makeLabel(y, text)
 	local lbl = Instance.new("TextLabel", frame)
-	lbl.Size = UDim2.new(0,160,0,18)
-	lbl.Position = UDim2.new(0.5,-80,0,y)
+	lbl.Size = UDim2.new(0,200,0,18)
+	lbl.Position = UDim2.new(0.5,-100,0,y)
 	lbl.Text, lbl.TextColor3 = text, Color3.fromRGB(255,140,0)
 	lbl.BackgroundTransparency = 1
-	lbl.Font, lbl.TextSize, lbl.TextXAlignment = Enum.Font.Gotham, 12, Enum.TextXAlignment.Left
+	lbl.Font, lbl.TextSize, lbl.TextXAlignment = Enum.TextXAlignment.Left, Enum.Font.Gotham
 	return lbl
 end
 
 local function makeButton(y, text)
 	local btn = Instance.new("TextButton", frame)
-	btn.Size = UDim2.new(0,160,0,24)
-	btn.Position = UDim2.new(0.5,-80,0,y)
+	btn.Size = UDim2.new(0,200,0,24)
+	btn.Position = UDim2.new(0.5,-100,0,y)
 	btn.Text = text
 	btn.BackgroundColor3 = Color3.fromRGB(50,30,70)
 	btn.TextColor3 = Color3.fromRGB(255,165,0)
@@ -82,23 +82,37 @@ title.Size = UDim2.new(1,-12,0,28)
 title.Position = UDim2.new(0,6,0,5)
 title.Text = "🎃 Fray.rbx || Autofarm"
 title.TextColor3, title.BackgroundTransparency = Color3.fromRGB(255,165,0), 1
-title.Font, title.TextSize, title.TextXAlignment = Enum.Font.GothamBold, 16, Enum.TextXAlignment.Left
+title.Font, title.TextSize, title.TextXAlignment = Enum.Font.GothamBold, 16
 
 local sep = Instance.new("Frame", frame)
 sep.Size = UDim2.new(1,-12,0,1)
 sep.Position = UDim2.new(0,6,0,35)
 sep.BackgroundColor3, sep.BorderSizePixel = Color3.fromRGB(120,60,180), 0
 
-local toggleBtn = makeButton(45, "Auto: OFF")
-local antiAfkBtn = makeButton(80, "AFK: OFF")
-local autoResetBtn = makeButton(115, "AutoReset: OFF")
-local speedBtn = makeButton(150, "Speed: 15")
-local antiFlingBtn = makeButton(185, "Anti Fling: OFF")
+-- Кнопки
+local toggleBtn = makeButton(50, "Auto: OFF")
+local antiAfkBtn = makeButton(85, "AFK: OFF")
+local autoResetBtn = makeButton(120, "AutoReset: OFF")
+local speedBtn = makeButton(155, "Speed: 15")
+local antiFlingBtn = makeButton(190, "Anti Fling: OFF")
+local removeTexturesBtn = makeButton(225, "Remove Textures")
 
-local counterLabel = makeLabel(215, "Candies: 0")
-local timerLabel = makeLabel(230, "Time: 0s")
-local rateLabel = makeLabel(245, "Rate: 0/h")
+removeTexturesBtn.MouseButton1Click:Connect(function()
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Decal") or obj:IsA("Texture") then
+			obj:Destroy()
+		end
+	end
+	removeTexturesBtn.Text = "Textures Removed ✅"
+	removeTexturesBtn.BackgroundColor3 = Color3.fromRGB(60,150,60)
+end)
 
+-- Лейблы
+local counterLabel = makeLabel(260, "Candies: 0")
+local timerLabel = makeLabel(275, "Time: 0s")
+local rateLabel = makeLabel(290, "Rate: 0/h")
+
+-- Функция для перемещения
 local function flyTo(pos, speed)
 	if not rootPart or not rootPart.Parent then return end
 	local dist = (pos - rootPart.Position).Magnitude
@@ -107,6 +121,7 @@ local function flyTo(pos, speed)
 	tween.Completed:Wait()
 end
 
+-- Логика кнопок
 toggleBtn.MouseButton1Click:Connect(function()
 	isActive = not isActive
 	toggleBtn.Text = isActive and "Auto: ON" or "Auto: OFF"
