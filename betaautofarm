@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
+local TestService = game:GetService("TestService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -25,7 +26,7 @@ gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 220, 0, 360)
+frame.Size = UDim2.new(0, 220, 0, 330)
 frame.Position = UDim2.new(0.5, -110, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
 frame.BorderSizePixel = 0
@@ -91,11 +92,12 @@ local autoResetBtn = makeButton(120, "AutoReset: OFF")
 local speedBtn = makeButton(155, "Speed: 15")
 local antiFlingBtn = makeButton(190, "Anti Fling: OFF")
 local texturesBtn = makeButton(225, "Hide Textures: OFF")
+local disableEffectsBtn = makeButton(260, "Disable Effects")
 
 -- Лейблы
-local counterLabel = makeLabel(260, "Candies: 0")
-local timerLabel = makeLabel(275, "Time: 0s")
-local rateLabel = makeLabel(290, "Rate: 0/h")
+local counterLabel = makeLabel(290, "Candies: 0")
+local timerLabel = makeLabel(305, "Time: 0s")
+local rateLabel = makeLabel(320, "Rate: 0/h")
 
 -- Перемещение
 local function flyTo(pos, speed)
@@ -106,30 +108,69 @@ local function flyTo(pos, speed)
 	tween.Completed:Wait()
 end
 
--- Полная очистка текстур и материалов
+-- Hide Textures
 texturesBtn.MouseButton1Click:Connect(function()
 	texturesHidden = not texturesHidden
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Decal") or obj:IsA("Texture") then
-			obj.Transparency = texturesHidden and 1 or 0
+			obj.Texture = texturesHidden and "" or obj.Texture
 		elseif obj:IsA("BasePart") then
-			obj.Transparency = texturesHidden and 1 or 0
-			-- Очищаем SpecialMesh
-			for _, mesh in pairs(obj:GetChildren()) do
-				if mesh:IsA("SpecialMesh") then
-					if texturesHidden then
-						mesh.TextureId = ""
-					end
-				end
-			end
-			-- Удаляем SurfaceAppearance, если есть
-			local sa = obj:FindFirstChildOfClass("SurfaceAppearance")
-			if sa and texturesHidden then
-				sa:Destroy()
-			end
+			obj.Material = Enum.Material.SmoothPlastic
 		end
 	end
 	texturesBtn.Text = texturesHidden and "Hide Textures: ON ✅" or "Hide Textures: OFF"
+end)
+
+-- Disable Effects
+disableEffectsBtn.MouseButton1Click:Connect(function()
+	local ToDisable = {
+		Textures = true,
+		VisualEffects = true,
+		Parts = true,
+		Particles = true,
+		Sky = true
+	}
+	local ToEnable = {FullBright = false}
+	local Stuff = {}
+
+	for _, v in next, game:GetDescendants() do
+		if ToDisable.Parts and (v:IsA("Part") or v:IsA("Union") or v:IsA("BasePart")) then
+			v.Material = Enum.Material.SmoothPlastic
+			table.insert(Stuff, 1, v)
+		end
+		if ToDisable.Particles and (v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Explosion") or v:IsA("Sparkles") or v:IsA("Fire")) then
+			v.Enabled = false
+			table.insert(Stuff, 1, v)
+		end
+		if ToDisable.VisualEffects and (v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect")) then
+			v.Enabled = false
+			table.insert(Stuff, 1, v)
+		end
+		if ToDisable.Textures and (v:IsA("Decal") or v:IsA("Texture")) then
+			v.Texture = ""
+			table.insert(Stuff, 1, v)
+		end
+		if ToDisable.Sky and v:IsA("Sky") then
+			v.Parent = nil
+			table.insert(Stuff, 1, v)
+		end
+	end
+
+	TestService:Message("Effects Disabler Script : Successfully disabled "..#Stuff.." assets / effects. Settings :")
+	for i,v in next, ToDisable do print(tostring(i)..": "..tostring(v)) end
+
+	if ToEnable.FullBright then
+		local Lighting = game:GetService("Lighting")
+		Lighting.FogColor = Color3.fromRGB(255,255,255)
+		Lighting.FogEnd = math.huge
+		Lighting.FogStart = math.huge
+		Lighting.Ambient = Color3.fromRGB(255,255,255)
+		Lighting.Brightness = 5
+		Lighting.ColorShift_Bottom = Color3.fromRGB(255,255,255)
+		Lighting.ColorShift_Top = Color3.fromRGB(255,255,255)
+		Lighting.OutdoorAmbient = Color3.fromRGB(255,255,255)
+		Lighting.Outlines = true
+	end
 end)
 
 -- Anti-Fling
@@ -144,7 +185,7 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- Автосбор
+-- Auto Farm
 toggleBtn.MouseButton1Click:Connect(function()
 	isActive = not isActive
 	toggleBtn.Text = isActive and "Auto: ON" or "Auto: OFF"
@@ -222,7 +263,7 @@ end)
 
 speedBtn.MouseButton1Click:Connect(function()
 	flySpeed += 1
-	if flySpeed > 25 then flySpeed = 10 end
+	if flySpeed > 25 then flySpeed = 10
 	speedBtn.Text = "Speed: "..flySpeed
 end)
 
