@@ -9,6 +9,21 @@ local rootPart = character:WaitForChild("HumanoidRootPart")
 
 local antiFlingEnabled = false
 
+local function disableCollisions()
+	for _, part in pairs(character:GetChildren()) do
+		if part:IsA("BasePart") then
+			part.CanCollide = false
+		end
+	end
+end
+
+disableCollisions()
+player.CharacterAdded:Connect(function(char)
+	character = char
+	rootPart = char:WaitForChild("HumanoidRootPart")
+	disableCollisions()
+end)
+
 RunService.Stepped:Connect(function()
 	if antiFlingEnabled then
 		for _, CoPlayer in pairs(Players:GetChildren()) do
@@ -99,22 +114,19 @@ local counterLabel = makeLabel(215, "Candies: 0")
 local timerLabel = makeLabel(230, "Time: 0s")
 local rateLabel = makeLabel(245, "Rate: 0/h")
 
-local function flyToSmooth(targetPos)
+local function flyToBody(targetPos)
 	if not rootPart or not rootPart.Parent then return end
-	local direction = (targetPos - rootPart.Position)
-	local distance = direction.Magnitude
-	if distance == 0 then return end
-	local unitDir = direction.Unit
-	local step = 0.5
-	local stepsCount = math.ceil(distance / step)
-	for i = 1, stepsCount do
-		if not rootPart or not rootPart.Parent then break end
-		rootPart.CFrame = CFrame.new(rootPart.Position + unitDir * step)
-		wait(0.01)
+	local bp = Instance.new("BodyPosition")
+	bp.MaxForce = Vector3.new(1e5,1e5,1e5)
+	bp.P = 10000
+	bp.D = 50
+	bp.Position = targetPos
+	bp.Parent = rootPart
+	while (rootPart.Position - targetPos).Magnitude > 1 do
+		task.wait(0.03)
+		bp.Position = targetPos
 	end
-	if rootPart and rootPart.Parent then
-		rootPart.CFrame = CFrame.new(targetPos)
-	end
+	bp:Destroy()
 end
 
 toggleBtn.MouseButton1Click:Connect(function()
@@ -145,7 +157,7 @@ toggleBtn.MouseButton1Click:Connect(function()
 					end
 				end
 				if closest then
-					flyToSmooth(closest.Position)
+					flyToBody(closest.Position)
 					if closest:IsDescendantOf(workspace) then
 						visitedPositions[closest]=true
 						collected+=1
@@ -200,4 +212,7 @@ player.Idled:Connect(function()
 		task.spawn(function()
 			VirtualUser:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
 			task.wait(1)
-			VirtualUser:Button
+			VirtualUser:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+		end)
+	end
+end)
